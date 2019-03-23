@@ -1,0 +1,202 @@
+unit MainModule;
+
+interface
+
+uses
+  System.SysUtils, System.Classes, FireDAC.Stan.ExprFuncs, FireDAC.Phys.SQLiteDef, FireDAC.UI.Intf, FireDAC.FMXUI.Wait, FireDAC.Stan.Intf, FireDAC.Stan.Option,
+  FireDAC.Stan.Error, FireDAC.Phys.Intf,
+  FireDAC.Stan.Def, FireDAC.Stan.Pool, FireDAC.Stan.Async, FireDAC.Phys, Data.DB, FireDAC.Comp.Client, FireDAC.Comp.UI, FireDAC.Phys.SQLite, System.iOUtils,
+  System.Generics.Collections, ubaby, FireDAC.Comp.ScriptCommands, FireDAC.Stan.Util, FireDAC.Comp.Script, FMX.graphics;
+
+type
+  TDMMainModule = class(TDataModule)
+    FDPhysSQLiteDriverLink1: TFDPhysSQLiteDriverLink;
+    FDGUIxWaitCursor1: TFDGUIxWaitCursor;
+    FDScript1: TFDScript;
+
+  private
+    { Private declarations }
+
+  public
+    { Public declarations }
+    function SqlitConnection(): TFDConnection;
+    function GetBabyList(): TList<TBaby>;
+    procedure DeleteBaby(BabyId: Integer);
+    procedure AddBaby(Baby: TBaby);
+    procedure SetBabyPresent(AID:integer;APresent :Boolean);
+  end;
+
+var
+  DMMainModule: TDMMainModule;
+
+implementation
+
+uses Uscript;
+
+{ %CLASSGROUP 'FMX.Controls.TControl' }
+
+{$R *.dfm}
+
+
+procedure TDMMainModule.AddBaby(Baby: TBaby);
+var
+  FDQuery1: TFDQuery;
+  MemStream: TMemoryStream;
+begin
+  TRY
+    FDQuery1 := TFDQuery.Create(Self);
+    FDQuery1.Connection := SqlitConnection();
+
+
+
+    FDQuery1.SQL.Text := 'INSERT INTO Babys (FirstName, LastName,Age,Present,ProfileImage) VALUES (:FirstName,:LastName,:Age,:Present,:ProfileImage)';
+
+    FDQuery1.ParamByName('FirstName').AsString := Baby.FirstName;
+    FDQuery1.ParamByName('LastName').AsString := Baby.LastName;
+    FDQuery1.ParamByName('Age').AsSingle := Baby.Age;
+    FDQuery1.ParamByName('Present').AsBoolean := Baby.Present;
+    if (Baby.profileImage <> nil) then
+    begin
+      try
+        MemStream := TMemoryStream.Create;
+        try
+          Baby.ProfileBitmap.SaveToStream(MemStream);
+          MemStream.Seek(0, 0);
+          FDQuery1.ParamByName('ProfileImage').LoadFromStream(MemStream, ftBlob);
+        except
+          on e: Exception do
+          begin
+//            ShowMessage(e.Message);
+          end;
+        end;
+      finally
+      MemStream.Free;
+      end;
+    end
+    else
+    begin
+      try
+        FDQuery1.ParamByName('ProfileImage').Assign(nil);
+      except
+        exit;
+      end;
+    end;
+
+    FDQuery1.ExecSQL;
+  FINALLY
+    FDQuery1.Connection.Close;
+    FDQuery1.Connection.Free;
+    FDQuery1.Close;
+    FDQuery1.Free;
+  END;
+end;
+
+procedure TDMMainModule.SetBabyPresent(AID:integer;APresent :Boolean);
+var
+  FDQuery1: TFDQuery;
+  MemStream: TMemoryStream;
+begin
+  TRY
+    FDQuery1 := TFDQuery.Create(Self);
+    FDQuery1.Connection := SqlitConnection();
+    FDQuery1.SQL.Text := 'Update Babys set Present=:Pre where ID=:ID';
+     FDQuery1.ParamByName('ID').AsInteger := AID;
+    FDQuery1.ParamByName('Pre').AsBoolean := APresent;
+
+    FDQuery1.ExecSQL;
+  FINALLY
+    FDQuery1.Connection.Close;
+    FDQuery1.Connection.Free;
+    FDQuery1.Close;
+    FDQuery1.Free;
+  END;
+end;
+
+
+procedure TDMMainModule.DeleteBaby(BabyId: Integer);
+var
+  FDQuery1: TFDQuery;
+begin
+  TRY
+    FDQuery1 := TFDQuery.Create(Self);
+    FDQuery1.Connection := SqlitConnection();
+    FDQuery1.SQL.Text := Format('DELETE FROM babys WHERE Id=%d', [BabyId]);
+    FDQuery1.ExecSQL;
+  FINALLY
+    FDQuery1.Connection.Close;
+    FDQuery1.Connection.Free;
+    FDQuery1.Close;
+    FDQuery1.Free;
+  END;
+end;
+
+function TDMMainModule.SqlitConnection(): TFDConnection;
+var
+  dbPath: string;
+const
+  DBFILE = 'DBBabys.db';
+begin
+{$IFDEF MSWINDOWS}
+  dbPath := TPath.Combine(ExpandFileName(GetCurrentDir), DBFILE);
+{$ELSE}
+  dbPath := TPath.GetDocumentsPath + PathDelim + DBFILE;
+{$ENDIF}
+  Result := TFDConnection.Create(Self);
+  Result.Params.Add('Database=' + dbPath);
+  Result.DriverName := 'SQLite';
+  Result.LoginPrompt := False;
+  Result.Open();
+end;
+
+function ConvertBytetoBitmap(ABlob: TField): Tbitmap;
+var
+  bmp: Tbitmap;
+  BlobStream: TStream;
+  FDQuery1: TFDQuery;
+begin
+  FDQuery1 := TFDQuery.Create(nil);
+  bmp := Tbitmap.Create;
+  try
+    // access a stream from a blob like this
+    BlobStream := FDQuery1.CreateBlobStream(ABlob, TBlobStreamMode.bmRead);
+    bmp.LoadFromStream(BlobStream);
+    Result := bmp;
+  finally
+    BlobStream.Free;
+    FDQuery1.Free;
+
+  end;
+
+end;
+
+function TDMMainModule.GetBabyList(): TList<TBaby>;
+var
+  mUser: TBaby;
+  FDQuery1: TFDQuery;
+begin
+
+  TRY
+    Result := TList<TBaby>.Create();
+
+    FDQuery1 := TFDQuery.Create(Self);
+    FDQuery1.Connection := SqlitConnection();
+    FDQuery1.SQL.Text := 'SELECT * FROM Babys';
+    FDQuery1.Open;
+
+    while not FDQuery1.EOF do
+    begin
+      Result.Add(TBaby.Create(FDQuery1.FieldByName('Id').AsInteger, FDQuery1.FieldByName('FirstName').AsString, FDQuery1.FieldByName('LastName').AsString,
+         FDQuery1.FieldByName('Age').AsSingle,ConvertBytetoBitmap(FDQuery1.FieldByName('ProfileImage')), FDQuery1.FieldByName('Present').AsBoolean));
+      FDQuery1.Next;
+    end;
+
+  FINALLY
+    FDQuery1.Connection.Close;
+    FDQuery1.Connection.Free;
+    FDQuery1.Close;
+    FDQuery1.Free;
+  END;
+
+end;
+
+end.

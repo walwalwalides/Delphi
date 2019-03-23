@@ -1,0 +1,19 @@
+{ ============================================
+  Software Name : 	NannyTracker
+  ============================================ }
+{ ******************************************** }
+{ Written By WalWalWalides                     }
+{ CopyRight © 2019                             }
+{ Email : WalWalWalides@gmail.com              }
+{ GitHub :https://github.com/walwalwalides     }
+{ ******************************************** }
+unit UStrRes;
+
+interface
+
+resourcestring
+  App_Name ='NannyTracker';
+
+implementation
+
+end.

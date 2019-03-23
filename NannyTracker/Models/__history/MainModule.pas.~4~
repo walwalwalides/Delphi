@@ -1,0 +1,150 @@
+unit MainModule;
+
+interface
+
+uses
+  System.SysUtils, System.Classes, FireDAC.Stan.ExprFuncs, FireDAC.Phys.SQLiteDef, FireDAC.UI.Intf, FireDAC.FMXUI.Wait, FireDAC.Stan.Intf, FireDAC.Stan.Option,
+  FireDAC.Stan.Error, FireDAC.Phys.Intf,
+  FireDAC.Stan.Def, FireDAC.Stan.Pool, FireDAC.Stan.Async, FireDAC.Phys, Data.DB, FireDAC.Comp.Client, FireDAC.Comp.UI, FireDAC.Phys.SQLite, System.iOUtils,
+  System.Generics.Collections, ubaby, vcl.graphics, FireDAC.Comp.ScriptCommands, FireDAC.Stan.Util, FireDAC.Comp.Script;
+
+type
+  TDMMainModule = class(TDataModule)
+    FDPhysSQLiteDriverLink1: TFDPhysSQLiteDriverLink;
+    FDGUIxWaitCursor1: TFDGUIxWaitCursor;
+    FDScript1: TFDScript;
+    procedure DataModuleCreate(Sender: TObject);
+
+  private
+    { Private declarations }
+
+  public
+    { Public declarations }
+    function SqlitConnection(): TFDConnection;
+    function GetBabyList(): TList<TBaby>;
+    procedure DeleteBaby(BabyId: Integer);
+    procedure AddBaby(Baby: TBaby);
+  end;
+
+var
+  DMMainModule: TDMMainModule;
+
+implementation
+uses Uscript;
+
+{ %CLASSGROUP 'FMX.Controls.TControl' }
+
+{$R *.dfm}
+
+procedure TDMMainModule.AddBaby(Baby: TBaby);
+var
+  FDQuery1: TFDQuery;
+  lWICImage: TWICImage;
+begin
+  TRY
+    FDQuery1 := TFDQuery.Create(Self);
+    FDQuery1.Connection := SqlitConnection();
+    FDQuery1.SQL.Text := 'INSERT INTO Baby (FirstName, LastName,Present,ProfileImage) VALUES (:FirstName,:LastName,:Present,:ProfileImage)';
+
+    FDQuery1.ParamByName('FirstName').AsString := Baby.FirstName;
+    FDQuery1.ParamByName('LastName').AsString := Baby.LastName;
+    FDQuery1.ParamByName('Present').AsBoolean := Baby.Present;
+    if (Baby.profileImage <> '') then
+    begin
+      lWICImage := TWICImage.Create; // use for all image format
+      try
+        lWICImage.LoadFromFile(Baby.profileImage);
+        FDQuery1.ParamByName('ProfileImage').Assign(lWICImage);
+      finally
+        lWICImage.Free;
+      end;
+    end
+    else
+    begin
+      try
+        FDQuery1.ParamByName('ProfileImage').Assign(nil);
+      except
+        exit;
+      end;
+    end;
+
+    FDQuery1.ExecSQL;
+  FINALLY
+    FDQuery1.Connection.Close;
+    FDQuery1.Connection.Free;
+    FDQuery1.Close;
+    FDQuery1.Free;
+  END;
+end;
+
+procedure TDMMainModule.DataModuleCreate(Sender: TObject);
+begin
+  Uscript.BuildTable;
+end;
+
+procedure TDMMainModule.DeleteBaby(BabyId: Integer);
+var
+  FDQuery1: TFDQuery;
+begin
+  TRY
+    FDQuery1 := TFDQuery.Create(Self);
+    FDQuery1.Connection := SqlitConnection();
+    FDQuery1.SQL.Text := Format('DELETE FROM babys WHERE Id=%d', [BabyId]);
+    FDQuery1.ExecSQL;
+  FINALLY
+    FDQuery1.Connection.Close;
+    FDQuery1.Connection.Free;
+    FDQuery1.Close;
+    FDQuery1.Free;
+  END;
+end;
+
+function TDMMainModule.SqlitConnection(): TFDConnection;
+var
+  dbPath: string;
+const
+  DBFILE = 'DBBabys.db';
+begin
+{$IFDEF MSWINDOWS}
+  dbPath := TPath.Combine(ExpandFileName(GetCurrentDir), DBFILE);
+{$ELSE}
+  dbPath := TPath.GetDocumentsPath + PathDelim + DBFILE;
+{$ENDIF}
+  Result := TFDConnection.Create(Self);
+  Result.Params.Add('Database=' + dbPath);
+  Result.DriverName := 'SQLite';
+  Result.LoginPrompt := False;
+  Result.Open();
+end;
+
+function TDMMainModule.GetBabyList(): TList<TBaby>;
+var
+  mUser: TBaby;
+  FDQuery1: TFDQuery;
+begin
+
+  TRY
+    Result := TList<TBaby>.Create();
+
+    FDQuery1 := TFDQuery.Create(Self);
+    FDQuery1.Connection := SqlitConnection();
+    FDQuery1.SQL.Text := 'SELECT * FROM Babys';
+    FDQuery1.Open;
+
+    while not FDQuery1.EOF do
+    begin
+      Result.Add(TBaby.Create(FDQuery1.FieldByName('Id').AsInteger, FDQuery1.FieldByName('FirstName').AsString, FDQuery1.FieldByName('LastName').AsString,
+      FDQuery1.FieldByName('ProfileImage').AsString, FDQuery1.FieldByName('Present').AsBoolean));
+      FDQuery1.Next;
+    end;
+
+  FINALLY
+    FDQuery1.Connection.Close;
+    FDQuery1.Connection.Free;
+    FDQuery1.Close;
+    FDQuery1.Free;
+  END;
+
+end;
+
+end.

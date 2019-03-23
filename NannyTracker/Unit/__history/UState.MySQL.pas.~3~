@@ -1,0 +1,194 @@
+{ ============================================
+  Software Name : 	MySQL_StoreProc
+  ============================================ }
+{ ******************************************** }
+{ Written By WalWalWalides                     }
+{ CopyRight © 2019                             }
+{ Email : WalWalWalides@gmail.com              }
+{ GitHub :https://github.com/walwalwalides     }
+{ ******************************************** }
+unit UState.MySQL;
+
+interface
+
+uses
+  System.Classes,
+  Vcl.StdCtrls,
+  Ustates,
+  UStrRes;
+
+type
+  TMySQLStateEnum = (
+    stMySQLUnknow,
+    stMySQLConnected,
+    stMySQLDisconnected,
+    stError
+  );
+
+  IMySQLState = interface
+    procedure Execute;
+    function GetEnumState : TMySQLStateEnum;
+  end;
+
+  TOraNotifyEvent = procedure(Sender: TObject; State: TMySQLStateEnum) of object;
+
+  TMySQLState = class
+  private
+    FlbOraStateLabel : TLabel;
+    FStateDispacher : IStateDispacher;
+    FState : IMySQLState;
+    FStateEnum : TMySQLStateEnum;
+    FOnChangeState : TOraNotifyEvent;
+    procedure SetState(State : IMySQLState);
+  public
+    constructor Create(State : IMySQLState; StateDisp : IStateDispacher; lbOraStateConn : TLabel);
+    destructor Destroy; override;
+    procedure ChangeState(const State : TMySQLStateEnum; const ErrNum : Integer = 0);
+    procedure Execute;
+    property OnChangeState : TOraNotifyEvent read FOnChangeState write FOnChangeState;
+    property EnumState : TMySQLStateEnum read FStateEnum;
+  end;
+
+  TOraStateUnknow = class (TInterfacedObject, IMySQLState)
+  private
+    FMySQLEnumState : TMySQLStateEnum;
+  public
+    constructor Create;
+    procedure Execute;
+    function GetEnumState : TMySQLStateEnum;
+  end;
+
+
+  TMySQLStateConnected = class (TInterfacedObject, IMySQLState)
+  private
+    FMySQLEnumState : TMySQLStateEnum;
+    FStateLabel : TLabel;
+  public
+    constructor Create(lbOraStateConn : TLabel);
+    procedure Execute;
+    function GetEnumState : TMySQLStateEnum;
+  end;
+
+  TMySQLStateError = class (TInterfacedObject, IMySQLState)
+  private
+    FErrNo : Integer;
+    FMySQLEnumState : TMySQLStateEnum;
+    FStateLabel : TLabel;
+  public
+    constructor Create(lbOraStateConn : TLabel; const ErrNo : Integer);
+    procedure Execute;
+    function GetEnumState : TMySQLStateEnum;
+  end;
+
+
+implementation
+
+{ TMySQLState }
+
+procedure TMySQLState.ChangeState(const State: TMySQLStateEnum; const ErrNum : Integer = 0);
+begin
+
+  if State = stMySQLUnknow then exit;
+
+  case State of
+    stMySQLConnected :
+      begin
+        Self.SetState(TMySQLStateConnected.Create(FlbOraStateLabel));  // connected
+        Self.Execute;
+      end;
+
+    stError:
+      begin
+        Self.SetState(TMySQLStateError.Create(FlbOraStateLabel, ErrNum));
+        Self.Execute;
+      end;
+  end;
+
+  if Assigned(FOnChangeState) then FOnChangeState(Self, State);
+
+  FStateDispacher.Notify(Self);
+
+end;
+
+constructor TMySQLState.Create(State: IMySQLState; StateDisp : IStateDispacher; lbOraStateConn : TLabel);
+begin
+  FlbOraStateLabel := lbOraStateConn;
+  FStateDispacher := StateDisp;
+  SetState(State);
+  FStateEnum := State.GetEnumState;
+end;
+
+destructor TMySQLState.Destroy;
+begin
+  FState := nil;
+  inherited;
+end;
+
+procedure TMySQLState.Execute;
+begin
+  FState.Execute;
+end;
+
+procedure TMySQLState.SetState(State: IMySQLState);
+begin
+  FState := State;
+  FStateEnum := FState.GetEnumState;
+end;
+
+{ TMySQLStateConnected }
+
+constructor TMySQLStateConnected.Create(lbOraStateConn : TLabel);
+begin
+  FMySQLEnumState := stMySQLConnected;
+  FStateLabel := lbOraStateConn;
+end;
+
+procedure TMySQLStateConnected.Execute;
+begin
+  FStateLabel.Caption := PS_STR_CONNECTED;
+end;
+
+function TMySQLStateConnected.GetEnumState: TMySQLStateEnum;
+begin
+  Result := FMySQLEnumState;
+end;
+
+{ TOraStateUnknow }
+
+constructor TOraStateUnknow.Create;
+begin
+  Inherited;
+  FMySQLEnumState := stMySQLUnknow;
+end;
+
+procedure TOraStateUnknow.Execute;
+begin
+//
+end;
+
+function TOraStateUnknow.GetEnumState: TMySQLStateEnum;
+begin
+  Result := FMySQLEnumState;
+end;
+
+{ TMySQLStateError }
+
+constructor TMySQLStateError.Create(lbOraStateConn: TLabel;
+  const ErrNo: Integer);
+begin
+  FStateLabel := lbOraStateConn;
+  FErrNo := ErrNo;
+  FMySQLEnumState := stError;
+end;
+
+procedure TMySQLStateError.Execute;
+begin
+  FStateLabel.Caption := 'Error';
+end;
+
+function TMySQLStateError.GetEnumState: TMySQLStateEnum;
+begin
+  Result := FMySQLEnumState;
+end;
+
+end.

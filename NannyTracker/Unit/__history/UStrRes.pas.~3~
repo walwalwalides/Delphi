@@ -1,0 +1,33 @@
+{ ============================================
+  Software Name : 	MySQL_StoreProc
+  ============================================ }
+{ ******************************************** }
+{ Written By WalWalWalides                     }
+{ CopyRight © 2019                             }
+{ Email : WalWalWalides@gmail.com              }
+{ GitHub :https://github.com/walwalwalides     }
+{ ******************************************** }
+unit UStrRes;
+
+interface
+
+resourcestring
+  PS_STR_NODATA       = 'NODATA';
+
+  PS_STR_CONNECTING   = 'CONNECTING';
+  PS_STR_CONNECTED    = 'CONNECTED';
+  PS_STR_DISCONNECTED = 'DISCONNECTED';
+  PS_STR_DATAHANDLE   = 'Обработка данных Srvc';
+
+  PS_STR_SRV_ERROR    ='Неожиданный ответ от Srvc.';
+
+  PS_STR_SRV_NOTRESPO ='Srvc не доступен.';
+  PS_STR_SRV_TIMEOUT  ='Тайм-аут. Переподключаюсь...';
+
+  PS_IN_SERVER      = 'IN_SERVER';
+  PS_IN_SERVEROPER  = 'IN_SERVEROPER';
+
+
+implementation
+
+end.

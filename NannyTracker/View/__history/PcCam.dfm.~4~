@@ -1,0 +1,139 @@
+object frmPcCam: TfrmPcCam
+  Left = 192
+  Top = 124
+  Caption = 'Web camera'
+  ClientHeight = 539
+  ClientWidth = 1120
+  Color = clBtnFace
+  Constraints.MinHeight = 300
+  Constraints.MinWidth = 500
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  Font.Style = []
+  OldCreateOrder = True
+  Position = poMainFormCenter
+  OnCreate = FormCreate
+  OnShow = FormShow
+  PixelsPerInch = 96
+  TextHeight = 13
+  object pbSnapShot: TPaintBox
+    Left = 537
+    Top = 89
+    Width = 583
+    Height = 425
+    Align = alClient
+    ExplicitWidth = 529
+  end
+  object Splitter1: TSplitter
+    Left = 529
+    Top = 89
+    Width = 8
+    Height = 425
+    ExplicitHeight = 426
+  end
+  object RVCamView1: TRVCamView
+    Left = 0
+    Top = 89
+    Width = 529
+    Height = 425
+    DoubleBuffered = True
+    Align = alLeft
+    CaptionFont.Charset = DEFAULT_CHARSET
+    CaptionFont.Color = clWindowText
+    CaptionFont.Height = -11
+    CaptionFont.Name = 'MS Sans Serif'
+    CaptionFont.Style = []
+    TabOrder = 0
+    VideoSource = RVCamera1
+  end
+  object GroupBox1: TGroupBox
+    Left = 0
+    Top = 0
+    Width = 1120
+    Height = 89
+    Align = alTop
+    Caption = 'Options'
+    TabOrder = 1
+    object Label1: TLabel
+      Left = 293
+      Top = 20
+      Width = 54
+      Height = 13
+      Caption = '&Resolution:'
+      Color = clBtnFace
+      FocusControl = cmbVideoResolution
+      ParentColor = False
+    end
+    object Label2: TLabel
+      Left = 16
+      Top = 20
+      Width = 41
+      Height = 13
+      Caption = '&Camera:'
+      Color = clBtnFace
+      FocusControl = cmbCamera
+      ParentColor = False
+    end
+    object btnOn: TButton
+      Left = 16
+      Top = 48
+      Width = 121
+      Height = 25
+      Caption = 'Camera On'
+      TabOrder = 2
+      OnClick = btnOnClick
+    end
+    object btnOff: TButton
+      Left = 144
+      Top = 48
+      Width = 121
+      Height = 25
+      Caption = 'Camera Off'
+      TabOrder = 3
+      OnClick = btnOffClick
+    end
+    object btnSnapShot: TButton
+      Left = 279
+      Top = 43
+      Width = 121
+      Height = 25
+      Caption = 'Make SnapShot'
+      TabOrder = 4
+      OnClick = btnSnapShotClick
+    end
+    object cmbVideoResolution: TComboBox
+      Left = 360
+      Top = 16
+      Width = 113
+      Height = 21
+      Style = csDropDownList
+      TabOrder = 1
+      OnChange = cmbVideoResolutionChange
+    end
+    object cmbCamera: TComboBox
+      Left = 72
+      Top = 16
+      Width = 201
+      Height = 21
+      Style = csDropDownList
+      DropDownCount = 20
+      TabOrder = 0
+      OnChange = cmbCameraChange
+    end
+  end
+  object StatusBar1: TStatusBar
+    Left = 0
+    Top = 514
+    Width = 1120
+    Height = 25
+    Panels = <>
+  end
+  object RVCamera1: TRVCamera
+    Agent = 'IP Camera'
+    DeviceType = rvdtWebCamera
+    Left = 428
+    Top = 46
+  end
+end

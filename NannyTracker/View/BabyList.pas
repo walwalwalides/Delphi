@@ -10,16 +10,24 @@ uses
   FMX.ListView.Adapters.Base, FMX.ListView, Data.Bind.Components,
   Data.Bind.ObjectScope,
   System.Generics.Collections, Data.Bind.Grid, FMX.Grid.Style, Fmx.Bind.Grid,
-  FMX.Controls.Presentation, FMX.ScrollBox, FMX.Grid, FMX.Objects;
+  FMX.Controls.Presentation, FMX.ScrollBox, FMX.Grid, FMX.Objects, Data.Bind.GenData, Fmx.Bind.GenData, FMX.Layouts, FMX.ListBox, FMX.Effects, FMX.Filter.Effects, FireDAC.Stan.Intf,
+  FireDAC.Stan.Option, FireDAC.DatS, FireDAC.Phys.Intf, FireDAC.DApt.Intf, FireDAC.DApt, FireDAC.Comp.Client;
 
 type
   TFBabyList = class(TFrame)
-    AdapterBindSource1: TAdapterBindSource;
     BindingsList1: TBindingsList;
-    LinkFillControlToField1: TLinkFillControlToField;
-    ListView1: TListView;
+    DataGeneratorAdapter1: TDataGeneratorAdapter;
+    LstBoxBabys: TListBox;
+    AdapterBindSource2: TAdapterBindSource;
+    LinkFillControlToField: TLinkFillControlToField;
+    InfoLabel: TLabel;
+    Resources1: TStyleBook;
+
   private
-    { Déclarations privées }
+    procedure DoInfoClick(Sender: TObject);
+
+    procedure DoVisibleChange(Sender: TObject);
+    procedure DoSaveClick(Sender: TObject);    { Déclarations privées }
 
   public
       procedure BindSourceAdapterReload();
@@ -27,22 +35,102 @@ type
   end;
 
 implementation
-   uses uBaby;
-
+   uses uBaby, MainModule;
+var
+ listBaby : TList<TBaby>;
 {$R *.fmx}
+
+
 procedure  TFBabyList.BindSourceAdapterReload();
-var listBaby : TList<TBaby>;
+var
+  I: Integer;
+var
+  Item: TListBoxItem;
 begin
+  LstBoxBabys.Clear;
+  AdapterBindSource2.Active  := False;
+  // create custom item
+  listBaby :=DMMainModule.GetBabyList();
+ LstBoxBabys.BeginUpdate;
+  for I := 0 to listBaby.Count-1 do
+ begin
+  Item := TListBoxItem.Create(nil);
+  Item.Parent := LstBoxBabys;
+  Item.StyleLookup := 'CustomItem';
+  Item.Text := listBaby.Items[i].lastName; // set filename
+ // if Odd(Item.Index) then
+//    Item.ItemData.Bitmap := Image1.Bitmap // set thumbnail
+//  else
+   Item.ItemData.Bitmap := listBaby.Items[i].profileImage; // set thumbnail
+  Item.StylesData['Age'] := listBaby.Items[i].Age; // set size
+  Item.StylesData['Firstname'] := listBaby.Items[i].firstName;
+  Item.StylesData['visible'] :=listBaby.Items[i].Present ; // set Checkbox value
+  Item.StylesData['visible.OnChange'] := TValue.From<TNotifyEvent>(DoVisibleChange); // set OnChange value
+  Item.StylesData['info.OnClick'] := TValue.From<TNotifyEvent>(DoInfoClick); // set OnClick value
+  Item.StylesData['save.OnClick'] := TValue.From<TNotifyEvent>(DosaveClick); // set OnClick value
+  end;
 
-  listBaby := TList<TBaby>.Create();
-  listBaby.Add(TBaby.Create(1,'zekiri','abdelali','baby1.jpg',true));
-  listBaby.Add(TBaby.Create(1,'Rouf','Rahich','baby2.jpg',true));
-  listBaby.Add(TBaby.Create(1,'Ali','Alowi','baby3.jpg',true));
-  listBaby.Add(TBaby.Create(1,'Meh','Mihoub','baby4.jpg',true));
 
-  AdapterBindSource1.Active  := False;
-  AdapterBindSource1.Adapter := TListBindSourceAdapter<TBaby>.Create(self,listBaby,True);
-  AdapterBindSource1.Active  := True;
+  LstBoxBabys.EndUpdate;
+
+  //if u wanna Using livebinding
+{
+AdapterBindSource2.Adapter := TListBindSourceAdapter<TBaby>.Create(self,listBaby,True);
+AdapterBindSource2.Active  := True;}
+
+
 
 end;
-end.
+function FindItemParent(Obj: TFmxObject; ParentClass: TClass): TFmxObject;
+begin
+  Result := nil;
+  if Assigned(Obj.Parent) then
+    if Obj.Parent.ClassType = ParentClass then
+      Result := Obj.Parent
+    else
+      Result := FindItemParent(Obj.Parent, ParentClass);
+end;
+
+procedure TFBabyList.DoInfoClick(Sender: TObject);
+var
+  Item : TListBoxItem;
+begin
+  Item := TListBoxItem(FindItemParent(Sender as TFmxObject,TListBoxItem));
+  if Assigned(Item) then
+  begin
+
+    InfoLabel.Text := 'Baby ID : ( ' + ListBaby.Items[Item.Index].id.ToString + ' )';
+  end;
+end;
+
+procedure TFBabyList.DoSaveClick(Sender: TObject);
+var
+  Item : TListBoxItem;
+begin
+  Item := TListBoxItem(FindItemParent(Sender as TFmxObject,TListBoxItem));
+  if Assigned(Item) then
+  begin
+    DMMainModule.SetBabyPresent(ListBaby.Items[Item.Index].id,Item.StylesData['visible'].AsBoolean);
+    InfoLabel.Text := 'Baby ID ( ' + ListBaby.Items[Item.Index].id.ToString + ' ) change status saved';
+  end;
+
+end;
+
+
+procedure TFBabyList.DoVisibleChange(Sender: TObject);
+var
+  Item : TListBoxItem;
+begin
+  Item := TListBoxItem(FindItemParent(Sender as TFmxObject,TListBoxItem));
+  if Assigned(Item) then
+    InfoLabel.Text := 'Baby ID ( ' + ListBaby.Items[Item.Index].id.ToString + ' ) Present item to ' + BoolToStr(Item.StylesData['visible'].AsBoolean, true);
+end;
+
+
+
+end.
+
+
+
+
+

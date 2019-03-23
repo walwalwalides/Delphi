@@ -27,6 +27,8 @@ uses uUser,REST.Json,system.iOUtils;
 
 {$R *.fmx}
 procedure TFlyoutHeader.Loead();
+const
+ pathback=   '..\Images';
 var
   User : TUser;
   text : string;
@@ -37,8 +39,10 @@ begin
    User := TJson.JsonToObject<Tuser>(text);
    LEmail.Text:=User.emailAddress;
    LName.Text:=User.firstName + ' ' + User.lastName;
-   path := TPath.GetDocumentsPath + PathDelim + User.image;
+   path := TPath.GetLibraryPath + pathback+PathDelim + User.image;
    CImage.Fill.Bitmap.Bitmap.LoadFromFile(path);
+
+
 end;
 
 

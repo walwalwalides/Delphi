@@ -1,5 +1,5 @@
 object FlyoutHeader: TFlyoutHeader
-  Size.Width = 320.000000000000000000
+  Size.Width = 353.000000000000000000
   Size.Height = 118.000000000000000000
   Size.PlatformDefault = False
   object RHeader: TRectangle
@@ -42663,7 +42663,7 @@ object FlyoutHeader: TFlyoutHeader
     Fill.Kind = Bitmap
     Margins.Left = -1.000000000000000000
     Margins.Right = -1.000000000000000000
-    Size.Width = 322.000000000000000000
+    Size.Width = 355.000000000000000000
     Size.Height = 118.000000000000000000
     Size.PlatformDefault = False
     Stroke.Color = claNull
@@ -42688,7 +42688,6 @@ object FlyoutHeader: TFlyoutHeader
         TextSettings.FontColor = claWhite
         TextSettings.HorzAlign = Center
         Text = 'Email'
-        TabOrder = 1
       end
       object CImage: TCircle
         Align = Client
@@ -42714,7 +42713,6 @@ object FlyoutHeader: TFlyoutHeader
         TextSettings.FontColor = claWhite
         TextSettings.HorzAlign = Center
         Text = 'LName'
-        TabOrder = 0
       end
     end
   end

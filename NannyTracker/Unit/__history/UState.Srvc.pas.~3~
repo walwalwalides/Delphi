@@ -1,0 +1,484 @@
+{ ============================================
+  Software Name : 	MySQL_StoreProc
+  ============================================ }
+{ ******************************************** }
+{ Written By WalWalWalides                     }
+{ CopyRight © 2019                             }
+{ Email : WalWalWalides@gmail.com              }
+{ GitHub :https://github.com/walwalwalides     }
+{ ******************************************** }
+
+unit UState.Srvc;
+
+
+interface
+
+uses
+  Vcl.ExtCtrls,UStates;
+
+type
+
+  TSrvcStateEnum = (
+    srvcUnknow,
+    srvcConnecting,
+    srvcConnected,
+    srvcNotResponded,
+    srvcReceiveSection,
+    srvcReceiveData,
+    srvcReceiveEnd,
+    srvcReadTimeOut,
+    srvcError,
+    srvcDisconnected
+  );
+
+  ISrvcState = interface
+    procedure Execute;
+    function GetEnumState : TSrvcStateEnum;
+  end;
+
+  TSrvcState = class
+  private
+    FState : ISrvcState;
+    FStateDispacher : IStateDispacher;
+    procedure SetState(State : ISrvcState);
+    function GetSrvcState: TSrvcStateEnum;
+  public
+    constructor Create(State : ISrvcState; StateDisp : IStateDispacher);
+    destructor Destroy; override;
+    procedure ChangeState(const State : TSrvcStateEnum);
+    procedure Execute;
+    property State : TSrvcStateEnum read GetSrvcState;
+  end;
+
+  TSrvcStateUnknown = class (TInterfacedObject, ISrvcState)
+  private
+    FEnumState : TSrvcStateEnum;
+  public
+    constructor Create;
+    procedure Execute;
+    function GetEnumState : TSrvcStateEnum;
+  end;
+
+  TSrvcStateNotResponded = class (TInterfacedObject, ISrvcState)
+  private
+    FEnumState : TSrvcStateEnum;
+  public
+    constructor Create;
+    procedure Execute;
+    function GetEnumState : TSrvcStateEnum;
+  end;
+
+  TSrvcStateConnecting = class (TInterfacedObject, ISrvcState)
+  private
+    FEnumState : TSrvcStateEnum;
+  public
+    constructor Create();
+    procedure Execute;
+    function GetEnumState : TSrvcStateEnum;
+  end;
+
+  TSrvcStateConnected = class (TInterfacedObject, ISrvcState)
+  private
+    FEnumState : TSrvcStateEnum;
+  public
+    constructor Create;
+    procedure Execute;
+    function GetEnumState : TSrvcStateEnum;
+  end;
+
+  TSrvcStateReceiveSection = class (TInterfacedObject, ISrvcState)
+  private
+    FEnumState : TSrvcStateEnum;
+  public
+    constructor Create;
+    procedure Execute;
+    function GetEnumState : TSrvcStateEnum;
+  end;
+
+  TSrvcStateReceiveData = class (TInterfacedObject, ISrvcState)
+  private
+    FEnumState : TSrvcStateEnum;
+  public
+    constructor Create;
+    procedure Execute;
+    function GetEnumState : TSrvcStateEnum;
+  end;
+
+  TSrvcStateReceiveEnd = class (TInterfacedObject, ISrvcState)
+  private
+    FEnumState : TSrvcStateEnum;
+  public
+    constructor Create;
+    procedure Execute;
+    function GetEnumState : TSrvcStateEnum;
+  end;
+
+  TSrvcStateReadTimeOut = class (TInterfacedObject, ISrvcState)
+  private
+    FEnumState : TSrvcStateEnum;
+  public
+    constructor Create;
+    procedure Execute;
+    function GetEnumState : TSrvcStateEnum;
+  end;
+
+  TSrvcStateError = class (TInterfacedObject, ISrvcState)
+  private
+    FEnumState : TSrvcStateEnum;
+  public
+    constructor Create;
+    procedure Execute;
+    function GetEnumState : TSrvcStateEnum;
+  end;
+
+  TSrvcStateDisconnected = class (TInterfacedObject, ISrvcState)
+  private
+    FEnumState : TSrvcStateEnum;
+  public
+    constructor Create;
+    procedure Execute;
+    function GetEnumState : TSrvcStateEnum;
+  end;
+
+implementation
+
+uses
+  Main, UStrRes;
+
+{ TSrvcState }
+
+procedure TSrvcState.ChangeState(const State: TSrvcStateEnum);
+begin
+
+  if state <> srvcUnknow then
+  case State of
+    srvcUnknow: ;
+
+    srvcConnecting:
+      begin
+        if not (FState is TSrvcStateConnecting) then
+        begin
+          SetState(TSrvcStateConnecting.Create);
+          Execute;
+        end;
+      end;
+
+    srvcNotResponded:
+      begin
+        if not (FState is TSrvcStateNotResponded) then
+        begin
+          SetState(TSrvcStateNotResponded.Create);
+          Execute;
+        end;
+      end;
+
+    srvcConnected:
+      begin
+        if not (FState is TSrvcStateConnected) then
+        begin
+          SetState(TSrvcStateConnected.Create);
+          Execute;
+        end;
+
+      end;
+
+    srvcReceiveSection:
+      begin
+        if (FState is TSrvcStateConnected) then
+        begin
+          SetState(TSrvcStateReceiveSection.Create);
+          Execute;
+        end;
+      end;
+
+    srvcReceiveData:
+      begin
+        if (FState is TSrvcStateReceiveSection) then
+        begin
+          SetState(TSrvcStateReceiveData.Create);
+          Execute;
+        end;
+      end;
+
+    srvcReceiveEnd:
+      begin
+        if (FState is TSrvcStateReceiveSection) or (FState is TSrvcStateReceiveData) then
+        begin
+          SetState(TSrvcStateReceiveEnd.Create);
+          Execute;
+        end;
+      end;
+
+    srvcReadTimeOut:
+      begin
+        if not (FState is TSrvcStateReadTimeOut) then
+        begin
+          SetState(TSrvcStateReadTimeOut.Create);
+          Execute;
+        end;
+      end;
+
+    srvcError:
+      begin
+        SetState(TSrvcStateError.Create);
+        Execute;
+      end;
+
+    srvcDisconnected:
+      begin
+        if ((FState is TSrvcStateConnected)) and ( not (FState is TSrvcStateDisconnected)) then
+        begin
+          SetState(TSrvcStateDisconnected.Create);
+          Execute;
+        end;
+      end;
+
+  end;
+
+  FStateDispacher.Notify(Self);
+
+end;
+
+constructor TSrvcState.Create(State: ISrvcState; StateDisp : IStateDispacher);
+begin
+  FState := State;
+  FStateDispacher := StateDisp;
+  FState.Execute;
+end;
+
+destructor TSrvcState.Destroy;
+begin
+  FState := nil;
+  inherited;
+end;
+
+procedure TSrvcState.Execute;
+begin
+  FState.Execute;
+end;
+
+function TSrvcState.GetSrvcState: TSrvcStateEnum;
+begin
+  Result := FState.GetEnumState;
+end;
+
+procedure TSrvcState.SetState(State: ISrvcState);
+begin
+  FState := State;
+end;
+
+{ TSrvcStateConnected }
+
+constructor TSrvcStateConnected.Create;
+begin
+  FEnumState := srvcConnected;
+end;
+
+procedure TSrvcStateConnected.Execute;
+begin
+
+  frmMain.lblSrvTCPState.Caption := PS_STR_CONNECTED;
+
+  frmMain.TrayIcon1.BalloonHint := 'Установлено соединение с сервером SRVC.';
+  frmMain.TrayIcon1.BalloonTitle:= 'MySQL_StoredProc';
+  frmMain.TrayIcon1.BalloonFlags:= bfInfo;
+  frmMain.TrayIcon1.ShowBalloonHint;
+
+end;
+
+function TSrvcStateConnected.GetEnumState: TSrvcStateEnum;
+begin
+  Result := FEnumState;
+end;
+
+{ TSrvcStateReceiveSection }
+
+constructor TSrvcStateReceiveSection.Create;
+begin
+  FEnumState := srvcReceiveSection;
+end;
+
+procedure TSrvcStateReceiveSection.Execute;
+begin
+
+end;
+
+function TSrvcStateReceiveSection.GetEnumState: TSrvcStateEnum;
+begin
+  Result := FEnumState;
+end;
+
+{ TSrvcStateReceiveData }
+
+constructor TSrvcStateReceiveData.Create;
+begin
+  FEnumState := srvcReceiveData;
+end;
+
+procedure TSrvcStateReceiveData.Execute;
+begin
+  frmMain.lblSrvTCPState.Caption := PS_STR_DATAHANDLE;
+
+  frmMain.TrayIcon1.BalloonHint := PS_STR_DATAHANDLE;
+  frmMain.TrayIcon1.BalloonTitle:= 'MySQL_StoredProc';
+  frmMain.TrayIcon1.BalloonFlags:= bfInfo;
+  frmMain.TrayIcon1.ShowBalloonHint;
+end;
+
+function TSrvcStateReceiveData.GetEnumState: TSrvcStateEnum;
+begin
+  Result := FEnumState;
+end;
+
+{ TSrvcStateError }
+
+constructor TSrvcStateError.Create;
+begin
+  FEnumState := srvcError;
+end;
+
+procedure TSrvcStateError.Execute;
+begin
+  frmMain.lblSrvTCPState.Caption := PS_STR_SRV_ERROR;
+  frmMain.lblPSyncState.Font.Color := 255;
+  frmMain.lblPSyncState.Caption := 'Error';
+  frmMain.TrayIcon1.BalloonHint := PS_STR_SRV_ERROR;
+  frmMain.TrayIcon1.BalloonTitle:= 'MySQL_StoredProc';
+  frmMain.TrayIcon1.BalloonFlags:= bfError;
+  frmMain.TrayIcon1.ShowBalloonHint;
+end;
+
+function TSrvcStateError.GetEnumState: TSrvcStateEnum;
+begin
+  Result := FEnumState;
+end;
+
+{ TSrvcStateDisconnected }
+
+constructor TSrvcStateDisconnected.Create;
+begin
+  FEnumState := srvcDisconnected;
+end;
+
+procedure TSrvcStateDisconnected.Execute;
+begin
+  frmMain.lblSrvTCPState.Caption := PS_STR_SRV_ERROR;
+
+  frmMain.TrayIcon1.BalloonHint := 'Неудалось подключить к серверу SRVC или ошибка получения данных';
+  frmMain.TrayIcon1.BalloonTitle:= 'MySQL_StoredProc';
+  frmMain.TrayIcon1.BalloonFlags:= bfError;
+  frmMain.TrayIcon1.ShowBalloonHint;
+end;
+
+function TSrvcStateDisconnected.GetEnumState: TSrvcStateEnum;
+begin
+  Result := FEnumState;
+end;
+
+{ TSrvcStateReceiveEnd }
+
+constructor TSrvcStateReceiveEnd.Create;
+begin
+  FEnumState := srvcReceiveEnd;
+end;
+
+procedure TSrvcStateReceiveEnd.Execute;
+begin
+  frmMain.lblSrvTCPState.Caption := PS_STR_DISCONNECTED;
+  frmMain.lblSrvcPackSize.Caption:= '-';
+
+  frmMain.TrayIcon1.BalloonHint := PS_STR_DISCONNECTED;
+  frmMain.TrayIcon1.BalloonTitle:= 'MySQL_StoredProc';
+  frmMain.TrayIcon1.BalloonFlags:= bfInfo;
+  frmMain.TrayIcon1.ShowBalloonHint;
+end;
+
+function TSrvcStateReceiveEnd.GetEnumState: TSrvcStateEnum;
+begin
+  Result := FEnumState;
+end;
+
+{ TSrvcStateNotResponded }
+
+constructor TSrvcStateNotResponded.Create;
+begin
+  FEnumState := srvcNotResponded;
+end;
+
+procedure TSrvcStateNotResponded.Execute;
+begin
+  frmMain.lblSrvTCPState.Caption := PS_STR_SRV_NOTRESPO;
+  frmMain.lblSrvcPackSize.Caption:= '-';
+
+  frmMain.TrayIcon1.BalloonHint := PS_STR_SRV_NOTRESPO;
+  frmMain.TrayIcon1.BalloonTitle:= 'MySQL_StoredProc';
+  frmMain.TrayIcon1.BalloonFlags:= bfWarning;
+  frmMain.TrayIcon1.ShowBalloonHint;
+end;
+
+function TSrvcStateNotResponded.GetEnumState: TSrvcStateEnum;
+begin
+  Result := FEnumState;
+end;
+
+{ TSrvcStateUnknown }
+
+constructor TSrvcStateUnknown.Create;
+begin
+  FEnumState := srvcUnknow;
+end;
+
+procedure TSrvcStateUnknown.Execute;
+begin
+
+end;
+
+function TSrvcStateUnknown.GetEnumState: TSrvcStateEnum;
+begin
+  Result := FEnumState;
+end;
+
+{ TSrvcStateReadTimeOut }
+
+constructor TSrvcStateReadTimeOut.Create;
+begin
+  FEnumState := srvcReadTimeOut;
+end;
+
+procedure TSrvcStateReadTimeOut.Execute;
+begin
+  frmMain.lblSrvTCPState.Caption := PS_STR_SRV_TIMEOUT;
+
+  frmMain.TrayIcon1.BalloonHint := 'SRVC timeout';
+  frmMain.TrayIcon1.BalloonTitle:= 'MySQL_StoredProc';
+  frmMain.TrayIcon1.BalloonFlags:= bfInfo;
+  frmMain.TrayIcon1.ShowBalloonHint;
+end;
+
+function TSrvcStateReadTimeOut.GetEnumState: TSrvcStateEnum;
+begin
+  Result := FEnumState;
+end;
+
+{ TSrvcStateConnecting }
+
+constructor TSrvcStateConnecting.Create();
+begin
+  FEnumState := srvcConnecting;
+end;
+
+procedure TSrvcStateConnecting.Execute;
+begin
+  frmMain.lblSrvTCPState.Caption := PS_STR_CONNECTING;
+  frmMain.TrayIcon1.BalloonHint := 'Offline';
+  frmMain.TrayIcon1.BalloonTitle:= 'MySQL_StoredProc';
+  frmMain.TrayIcon1.BalloonFlags:= bfInfo;
+  frmMain.TrayIcon1.ShowBalloonHint;
+end;
+
+function TSrvcStateConnecting.GetEnumState: TSrvcStateEnum;
+begin
+  Result := FEnumState;
+end;
+
+end.
