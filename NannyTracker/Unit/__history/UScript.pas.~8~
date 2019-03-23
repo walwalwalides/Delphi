@@ -4,7 +4,7 @@ interface
 
 uses FireDAC.Comp.Script;
 
-procedure CreateTableBabys;
+procedure CreateTableBaby;
 procedure BuildTable;
 procedure CreateTableLog;
 
@@ -81,8 +81,7 @@ begin
 
 end;
 
-
-procedure CreateTableBabys;
+procedure CreateTableBaby;
 var
   tmpScript: TFDScript;
 begin
@@ -116,7 +115,7 @@ begin
 
 end;
 
-procedure InsertTableBabys;
+procedure InsertTable;
 var
   tmpScript: TFDScript;
 begin
@@ -127,9 +126,15 @@ begin
     Clear;
     with Add do
     begin
-      SQL.Add('INSERT INTO Babys (Id,LastName,FirstName,Age,Present,ProfileImage)');
+      SQL.Add('INSERT INTO customers (Id,Name)');
       SQL.Add('VALUES');
-      SQL.Add('(1,"ALex","Alex",30,true,'');');
+      SQL.Add('(1,"Alex");');
+      SQL.Add('INSERT INTO customers (Id,Name)');
+      SQL.Add('VALUES');
+      SQL.Add('(2,"Jack");');
+      SQL.Add('INSERT INTO customers (Id,Name)');
+      SQL.Add('VALUES');
+      SQL.Add('(3,"Patrick");');
     end;
   end;
   try
@@ -147,7 +152,7 @@ end;
 
 procedure BuildTable;
 begin
-  CreateTableBabys;
+  CreateTableBaby;
 //  InsertTable;
 //  CreateData_Table;
 end;
