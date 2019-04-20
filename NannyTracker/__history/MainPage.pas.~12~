@@ -23,10 +23,12 @@ type
     Label1: TLabel;
     Lang1: TLang;
     MainHeader: TRectangle;
+    FlyoutHeader: TFlyoutHeader;
     TabControl1: TTabControl;
     TabItem1: TTabItem;
     TabItem2: TTabItem;
     TabItem3: TTabItem;
+    FBabyList1: TFBabyList;
     BtnBabiesList: TRectangle;
     Image2: TImage;
     Label2: TLabel;
@@ -41,6 +43,7 @@ type
     btnTakePhoto: TListBoxItem;
     btnTakeFromLibrary: TListBoxItem;
     btnActionSheetClose: TListBoxItem;
+    FBabyEdit1: TFBabyEdit;
     OpDlgPicture: TOpenDialog;
     // Declaration proceduren
     procedure FormCreate(Sender: TObject);
